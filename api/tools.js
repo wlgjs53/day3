@@ -1,5 +1,5 @@
-// find_spots 도구: jeju_spots.json 의 spots 에서만 골라 돌려준다(목록 밖 장소는 만들지 않는다).
-const { spots } = require('../jeju_spots.json');
+// find_spots 도구: index.json 의 spots 에서만 골라 돌려준다(목록 밖 장소는 만들지 않는다).
+const { spots } = require('../index.json');
 
 const MAX_RESULTS = 8;
 const AREAS = ['동쪽', '서쪽', '서귀포', '제주시'];
@@ -29,7 +29,7 @@ const tools = [
   {
     name: 'find_spots',
     description:
-      '제주 관광지 목록(jeju_spots.json)에서 지역과 실내 여부로 장소를 찾아 최대 8곳의 이름 · 지역 · 실내 여부 · 설명을 돌려준다. ' +
+      '제주 관광지 목록에서 지역과 실내 여부로 장소를 찾아 최대 8곳의 이름 · 지역 · 실내 여부 · 설명을 돌려준다. ' +
       '이 목록에 있는 장소만 추천할 수 있고, 목록 밖 장소는 없다. 결과에 없는 장소를 지어내거나 덧붙이지 말 것. ' +
       '운영시간 · 요금 · 휴무는 담겨 있지 않다.',
     input_schema: {
