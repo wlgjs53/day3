@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제주 여행 에이전트</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; font-family: 'Segoe UI', sans-serif; color: #eaf6ff;
+            background: linear-gradient(135deg, #0f2a4a, #14627a 45%, #1fa38a 80%, #f7b267);
+            background-size: 300% 300%; animation: flow 18s ease infinite;
+        }
+        @keyframes flow { 50% { background-position: 100% 100%; } }
+        /* 떠다니는 이모지 */
+        .float { position: fixed; font-size: 34px; opacity: .25; animation: drift 14s ease-in-out infinite; pointer-events: none; }
+        .float:nth-child(1) { left: 6%; top: 18%; }
+        .float:nth-child(2) { right: 8%; top: 30%; animation-delay: -4s; }
+        .float:nth-child(3) { left: 12%; bottom: 12%; animation-delay: -8s; }
+        .float:nth-child(4) { right: 14%; bottom: 8%; animation-delay: -2s; }
+        @keyframes drift { 50% { transform: translateY(-28px) rotate(8deg); } }
+
+        main { position: relative; max-width: 760px; margin: 0 auto; padding: 36px 16px 60px; }
+        h1 { margin: 0 0 4px; font-size: 32px; text-shadow: 0 2px 14px rgba(0,0,0,.35); }
+        .sub { margin: 0 0 22px; opacity: .85; }
+        .glass {
+            background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3);
+            backdrop-filter: blur(12px); border-radius: 18px; padding: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+        }
+        form { display: flex; gap: 10px; }
+        input {
+            flex: 1; padding: 14px 16px; font-size: 16px; color: #fff; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.25); outline: none;
+        }
+        input::placeholder { color: rgba(255,255,255,.6); }
+        input:focus { border-color: #ffd98a; box-shadow: 0 0 0 3px rgba(255,217,138,.3); }
+        button {
+            padding: 0 22px; border: 0; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;
+            color: #3a2200; background: linear-gradient(135deg, #ffd98a, #ff9f5a); transition: transform .15s;
+        }
+        button:hover { transform: translateY(-2px) scale(1.03); }
+        button:disabled { opacity: .55; transform: none; cursor: wait; }
+        .chips { margin: 14px 0 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .chips span {
+            padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
+            background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3); transition: .2s;
+        }
+        .chips span:hover { background: rgba(255,255,255,.35); transform: translateY(-2px); }
+
+        .box { margin-top: 18px; animation: rise .5s ease both; }
+        @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+        .box h2 { margin: 0 0 10px; font-size: 15px; letter-spacing: .5px; color: #ffe2a8; }
+        .step {
+            display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; margin: 8px 0;
+            background: rgba(0,0,0,.25); border-radius: 12px; font-size: 13px; animation: rise .4s ease both;
+        }
+        .step .ico { font-size: 22px; }
+        .step b { color: #8fe3ff; font-size: 14px; }
+        .step code { display: block; margin-top: 2px; color: #cfe7f5; word-break: break-all; }
+        #answer { white-space: pre-wrap; line-height: 1.75; font-size: 16px; }
+
+        .loading { display: flex; gap: 10px; align-items: center; }
+        .dots span { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 50%; background: #ffd98a; animation: bounce 1s infinite; }
+        .dots span:nth-child(2) { animation-delay: .15s; }
+        .dots span:nth-child(3) { animation-delay: .3s; }
+        @keyframes bounce { 50% { transform: translateY(-10px); opacity: .5; } }
+        @media (max-width: 520px) { h1 { font-size: 26px; } form { flex-direction: column; } button { padding: 12px; } }
+    </style>
+</head>
+<body>
+    <div class="float">🌴</div><div class="float">🍊</div><div class="float">🌊</div><div class="float">⛰️</div>
+    <main>
+        <h1>🌴 제주 여행 에이전트</h1>
+        <p class="sub">날씨를 보고 장소를 찾아, 지금 가기 좋은 곳을 추천해 드려요.</p>
+
+        <div class="glass">
+            <form id="f">
+                <input id="q" placeholder="예) 내일 서귀포에서 뭐 하면 좋을까?" autocomplete="off">
+                <button id="go">✨ 추천받기</button>
+            </form>
+            <div class="chips" id="chips">
+                <span>오늘 제주시 놀러갈 곳 추천해줘</span>
+                <span>비 오면 갈 만한 동쪽 실내 장소 알려줘</span>
+                <span>서쪽에서 야외 활동 하기 좋은 날씨야?</span>
+            </div>
+        </div>
+
+        <div class="glass box" id="stepsBox" hidden>
+            <h2>🤖 에이전트가 고른 도구</h2>
+            <div id="steps"></div>
+        </div>
+        <div class="glass box" id="answerBox" hidden>
+            <h2>💡 추천</h2>
+            <div id="answer"></div>
+        </div>
+    </main>
+
+    <script>
+        const $ = (id) => document.getElementById(id)
+        const ICON = { get_weather: '🌤️', find_spots: '🗺️' }
+        document.querySelectorAll('#chips span').forEach(c => c.onclick = () => { $('q').value = c.textContent; $('f').requestSubmit() })
+
+        function showLoading() {
+            $('answer').innerHTML = '<div class="loading"><div class="dots"><span></span><span></span><span></span></div>에이전트가 도구를 고르는 중...</div>'
+        }
+
+        $('f').onsubmit = async (e) => {
+            e.preventDefault()
+            const message = $('q').value.trim()
+            if (!message) return
+            $('go').disabled = true
+            $('stepsBox').hidden = true
+            $('answerBox').hidden = false
+            showLoading()
+            try {
+                const r = await fetch('/api/agent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                })
+                const d = await r.json()
+                if (!r.ok) { $('answer').textContent = d.error || '오류가 발생했습니다.'; return }
+                $('steps').textContent = ''
+                d.steps.forEach((s, i) => {
+                    const div = document.createElement('div')
+                    div.className = 'step'
+                    div.style.animationDelay = i * 0.15 + 's'
+                    const ico = document.createElement('span')
+                    ico.className = 'ico'
+                    ico.textContent = ICON[s.tool] || '🔧'
+                    const body = document.createElement('div')
+                    const b = document.createElement('b')
+                    b.textContent = `${i + 1}. ${s.tool}`
+                    const code = document.createElement('code')
+                    code.textContent = JSON.stringify(s.input)
+                    body.append(b, code)
+                    div.append(ico, body)
+                    $('steps').append(div)
+                })
+                $('stepsBox').hidden = d.steps.length === 0
+                $('answer').textContent = d.answer
+            } catch (err) {
+                $('answer').textContent = '요청에 실패했습니다.'
+            } finally {
+                $('go').disabled = false
+            }
+        }
+    </script>
+</body>
+</html>
