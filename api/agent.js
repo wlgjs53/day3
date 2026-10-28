@@ -3,7 +3,7 @@
 // API Key 는 Vercel 환경변수(GEMINI_API_KEY)에서만 읽는다.
 const { tools, handlers } = require('./tools');
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const MAX_TURNS = 6;
 
 const SYSTEM =
