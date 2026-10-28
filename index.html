@@ -119,8 +119,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message })
                 })
-                const d = await r.json()
-                if (!r.ok) { $('answer').textContent = d.error || '오류가 발생했습니다.'; return }
+                const raw = await r.text()
+                let d
+                try { d = JSON.parse(raw) } catch (e) {
+                    $('answer').textContent = `서버 응답 오류 (HTTP ${r.status})\n${raw.slice(0, 300)}`
+                    return
+                }
+                if (!r.ok) { $('answer').textContent = [d.error, d.detail].filter(Boolean).join('\n') || '오류가 발생했습니다.'; return }
                 $('steps').textContent = ''
                 d.steps.forEach((s, i) => {
                     const div = document.createElement('div')
@@ -141,7 +146,7 @@
                 $('stepsBox').hidden = d.steps.length === 0
                 $('answer').textContent = d.answer
             } catch (err) {
-                $('answer').textContent = '요청에 실패했습니다.'
+                $('answer').textContent = '요청에 실패했습니다. (' + err.message + ')'
             } finally {
                 $('go').disabled = false
             }
