@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제주 관광지 지도</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        body { margin: 0; font-family: sans-serif; }
+        form { padding: 8px; display: flex; gap: 8px; align-items: center; }
+        #map { height: calc(100vh - 50px); }
+    </style>
+</head>
+<body>
+    <form id="f">
+        <select id="area">
+            <option>동쪽</option><option>서쪽</option><option>서귀포</option><option>제주시</option>
+        </select>
+        <select id="indoor">
+            <option value="">실내/야외 전체</option>
+            <option value="true">실내</option>
+            <option value="false">야외</option>
+        </select>
+        <button>찾기</button>
+        <span id="msg"></span>
+    </form>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([33.38, 126.55], 10)
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map)
+        let marker
+
+        document.getElementById('f').onsubmit = async (e) => {
+            e.preventDefault()
+            const area = document.getElementById('area').value
+            const indoor = document.getElementById('indoor').value
+            const msg = document.getElementById('msg')
+            const r = await fetch(`/api/spots?area=${encodeURIComponent(area)}&indoor=${indoor}`)
+            const data = await r.json()
+            if (!r.ok) { msg.textContent = data.error; return }
+
+            msg.textContent = `${data.count}곳 (장소별 좌표가 없어 지역 중심에 표시)`
+            if (marker) marker.remove()
+            // 좌표가 지역 중심 하나뿐이라 마커 하나에 장소 목록을 담는다
+            let html = `<b>${area}</b><ul style="padding-left:16px;margin:4px 0">`
+            for (const s of data.spots) {
+                html += `<li>${s.name} (${s.indoor ? '실내' : '야외'}) - ${s.desc}</li>`
+            }
+            marker = L.marker(data.center).addTo(map).bindPopup(html + '</ul>').openPopup()
+            map.setView(data.center, 11)
+        }
+    </script>
+</body>
+</html>
