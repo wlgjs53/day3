@@ -20,8 +20,8 @@ const functionDeclarations = tools.map(t => ({
   parameters: t.input_schema,
 }));
 
-async function callGemini(key, contents, withTools = true) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+async function callGemini(key, contents, withTools = true, model = MODEL) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const init = {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ status: r.status, names, error: d.error && d.error.message });
     }
     try {
-      const d = await callGemini(key, [{ role: 'user', parts: [{ text: '동쪽 실내 장소 알려줘' }] }], req.query.mode === 'tools');
+      const d = await callGemini(key, [{ role: 'user', parts: [{ text: '동쪽 실내 장소 알려줘' }] }], req.query.mode === 'tools', req.query.model || MODEL);
       const parts = (d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || [];
       return res.status(200).json({ model: MODEL, mode: req.query.mode || 'plain', ms: Date.now() - t, parts: JSON.stringify(parts).slice(0, 400) });
     } catch (e) {
