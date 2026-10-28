@@ -3,185 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>우주 대시보드</title>
+    <title>제주 여행 에이전트</title>
     <style>
-        html, body { margin: 0; height: 100%; background: #000; color: #e6edf7; font-family: sans-serif; overflow: hidden; }
-        #globe { position: fixed; inset: 0; }
-        .panel { position: fixed; background: rgba(13, 18, 35, .78); border: 1px solid rgba(138, 180, 255, .25);
-                 border-radius: 12px; padding: 12px 14px; backdrop-filter: blur(6px); font-size: 14px; }
-        .panel h3 { margin: 0 0 8px; font-size: 15px; color: #8ab4ff; }
-        .panel div.row { display: flex; justify-content: space-between; gap: 24px; padding: 2px 0; }
-        #iss { top: 16px; left: 16px; min-width: 230px; }
-        #quake { top: 16px; right: 16px; min-width: 200px; }
-        #legend { bottom: 16px; left: 16px; font-size: 12px; line-height: 1.7; }
-        button { margin-top: 8px; width: 100%; padding: 6px; border: 0; border-radius: 8px; background: #2c4a8f; color: #fff; cursor: pointer; }
-        .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
-        .sat { font-size: 26px; filter: drop-shadow(0 0 8px #8ab4ff); animation: pulse 1.6s infinite; pointer-events: none; }
-        @keyframes pulse { 50% { filter: drop-shadow(0 0 16px #fff); } }
-        @media (max-width: 600px) { #quake { top: auto; bottom: 16px; right: 16px; } #legend { display: none; } }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; font-family: 'Segoe UI', sans-serif; color: #eaf6ff;
+            background: linear-gradient(135deg, #0f2a4a, #14627a 45%, #1fa38a 80%, #f7b267);
+            background-size: 300% 300%; animation: flow 18s ease infinite;
+        }
+        @keyframes flow { 50% { background-position: 100% 100%; } }
+        /* 떠다니는 이모지 */
+        .float { position: fixed; font-size: 34px; opacity: .25; animation: drift 14s ease-in-out infinite; pointer-events: none; }
+        .float:nth-child(1) { left: 6%; top: 18%; }
+        .float:nth-child(2) { right: 8%; top: 30%; animation-delay: -4s; }
+        .float:nth-child(3) { left: 12%; bottom: 12%; animation-delay: -8s; }
+        .float:nth-child(4) { right: 14%; bottom: 8%; animation-delay: -2s; }
+        @keyframes drift { 50% { transform: translateY(-28px) rotate(8deg); } }
+
+        main { position: relative; max-width: 760px; margin: 0 auto; padding: 36px 16px 60px; }
+        h1 { margin: 0 0 4px; font-size: 32px; text-shadow: 0 2px 14px rgba(0,0,0,.35); }
+        .sub { margin: 0 0 22px; opacity: .85; }
+        .glass {
+            background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3);
+            backdrop-filter: blur(12px); border-radius: 18px; padding: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+        }
+        form { display: flex; gap: 10px; }
+        input {
+            flex: 1; padding: 14px 16px; font-size: 16px; color: #fff; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.25); outline: none;
+        }
+        input::placeholder { color: rgba(255,255,255,.6); }
+        input:focus { border-color: #ffd98a; box-shadow: 0 0 0 3px rgba(255,217,138,.3); }
+        button {
+            padding: 0 22px; border: 0; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;
+            color: #3a2200; background: linear-gradient(135deg, #ffd98a, #ff9f5a); transition: transform .15s;
+        }
+        button:hover { transform: translateY(-2px) scale(1.03); }
+        button:disabled { opacity: .55; transform: none; cursor: wait; }
+        .chips { margin: 14px 0 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .chips span {
+            padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
+            background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3); transition: .2s;
+        }
+        .chips span:hover { background: rgba(255,255,255,.35); transform: translateY(-2px); }
+
+        .box { margin-top: 18px; animation: rise .5s ease both; }
+        @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+        .box h2 { margin: 0 0 10px; font-size: 15px; letter-spacing: .5px; color: #ffe2a8; }
+        .step {
+            display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; margin: 8px 0;
+            background: rgba(0,0,0,.25); border-radius: 12px; font-size: 13px; animation: rise .4s ease both;
+        }
+        .step .ico { font-size: 22px; }
+        .step b { color: #8fe3ff; font-size: 14px; }
+        .step code { display: block; margin-top: 2px; color: #cfe7f5; word-break: break-all; }
+        #answer { white-space: pre-wrap; line-height: 1.75; font-size: 16px; }
+
+        .loading { display: flex; gap: 10px; align-items: center; }
+        .dots span { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 50%; background: #ffd98a; animation: bounce 1s infinite; }
+        .dots span:nth-child(2) { animation-delay: .15s; }
+        .dots span:nth-child(3) { animation-delay: .3s; }
+        @keyframes bounce { 50% { transform: translateY(-10px); opacity: .5; } }
+        @media (max-width: 520px) { h1 { font-size: 26px; } form { flex-direction: column; } button { padding: 12px; } }
     </style>
 </head>
 <body>
-    <div id="globe"></div>
+    <div class="float">🌴</div><div class="float">🍊</div><div class="float">🌊</div><div class="float">⛰️</div>
+    <main>
+        <h1>🌴 제주 여행 에이전트</h1>
+        <p class="sub">날씨를 보고 장소를 찾아, 지금 가기 좋은 곳을 추천해 드려요.</p>
 
-    <div class="panel" id="iss">
-        <h3>🛰️ ISS 실시간</h3>
-        <div class="row"><span>위도</span><span id="lat">-</span></div>
-        <div class="row"><span>경도</span><span id="lon">-</span></div>
-        <div class="row"><span>고도</span><span id="alt">-</span></div>
-        <div class="row"><span>속도</span><span id="vel">-</span></div>
-        <div class="row"><span>상태</span><span id="vis">-</span></div>
-        <button id="follow">ISS 따라가기: 켜짐</button>
-    </div>
+        <div class="glass">
+            <form id="f">
+                <input id="q" placeholder="예) 내일 서귀포에서 뭐 하면 좋을까?" autocomplete="off">
+                <button id="go">✨ 추천받기</button>
+            </form>
+            <div class="chips" id="chips">
+                <span>오늘 제주시 놀러갈 곳 추천해줘</span>
+                <span>비 오면 갈 만한 동쪽 실내 장소 알려줘</span>
+                <span>서쪽에서 야외 활동 하기 좋은 날씨야?</span>
+            </div>
+        </div>
 
-    <div class="panel" id="quake">
-        <h3>🌋 최근 24시간 지진 (규모 2.5+)</h3>
-        <div class="row"><span>발생 횟수</span><span id="qcount">-</span></div>
-        <div class="row"><span>최대 규모</span><span id="qmax">-</span></div>
-        <div id="qplace" style="font-size:12px;color:#aab6d3;margin-top:4px"></div>
-    </div>
+        <div class="glass box" id="stepsBox" hidden>
+            <h2>🤖 에이전트가 고른 도구</h2>
+            <div id="steps"></div>
+        </div>
+        <div class="glass box" id="answerBox" hidden>
+            <h2>💡 추천</h2>
+            <div id="answer"></div>
+        </div>
+    </main>
 
-    <div class="panel" id="legend">
-        <div><span class="dot" style="background:#8ab4ff"></span>ISS 지나온 경로</div>
-        <div><span class="dot" style="background:#ffb454"></span>앞으로 90분 예상 경로</div>
-        <div><span class="dot" style="background:#ff5a5a"></span>지진 (클수록 크고 붉음)</div>
-        <div>🌗 지구의 어두운 쪽이 지금 밤인 지역</div>
-    </div>
-
-    <script src="https://unpkg.com/globe.gl@2.41.0/dist/globe.gl.min.js"></script>
     <script>
-        const IMG = 'https://unpkg.com/three-globe@2.41.0/example/img/'
         const $ = (id) => document.getElementById(id)
-        const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+        const ICON = { get_weather: '🌤️', find_spots: '🗺️' }
+        document.querySelectorAll('#chips span').forEach(c => c.onclick = () => { $('q').value = c.textContent; $('f').requestSubmit() })
 
-        const satEl = document.createElement('div')
-        satEl.className = 'sat'
-        satEl.textContent = '🛰️'
-
-        const world = Globe()($('globe'))
-            .globeImageUrl(IMG + 'earth-blue-marble.jpg')
-            .bumpImageUrl(IMG + 'earth-topology.png')
-            .backgroundImageUrl(IMG + 'night-sky.png')
-            .atmosphereColor('#6aa4ff')
-            .htmlElementsData([])
-            .htmlElement(() => satEl)
-            .pathPoints('points')
-            .pathPointLat(p => p[0]).pathPointLng(p => p[1]).pathPointAlt(p => p[2])
-            .pathColor(p => p.color)
-            .pathStroke(1.5)
-            .pathDashLength(d => d.dash)
-            .pathDashGap(d => d.dash < 1 ? 0.2 : 0)
-            .pathDashAnimateTime(d => d.dash < 1 ? 12000 : 0)
-            .pointLat('lat').pointLng('lng')
-            .pointAltitude(d => d.mag * 0.02)
-            .pointRadius(d => d.mag * 0.12)
-            .pointColor(d => d.mag >= 6 ? '#ff2a2a' : d.mag >= 5 ? '#ff6a3a' : d.mag >= 4 ? '#ffb454' : '#ffe27a')
-            .pointLabel(d => `<b>M${d.mag}</b> ${esc(d.place)}`)
-        world.controls().autoRotate = false
-
-        // ---- 낮/밤: 지구 재질의 셰이더에 태양 방향을 넣어 밤쪽을 어둡게 한다 ----
-        const sunUniform = { value: [1, 0, 0] }
-        const mat = world.globeMaterial()
-        mat.onBeforeCompile = (sh) => {
-            sh.uniforms.uSunDir = sunUniform
-            sh.vertexShader = sh.vertexShader
-                .replace('#include <common>', '#include <common>\nvarying vec3 vObjNormal;')
-                .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObjNormal = normal;')
-            sh.fragmentShader = sh.fragmentShader
-                .replace('#include <common>', '#include <common>\nvarying vec3 vObjNormal;\nuniform vec3 uSunDir;')
-                .replace('#include <map_fragment>',
-                    '#include <map_fragment>\n' +
-                    'float sunLit = smoothstep(-0.12, 0.12, dot(normalize(vObjNormal), normalize(uSunDir)));\n' +
-                    'diffuseColor.rgb *= mix(0.10, 1.0, sunLit);')
-        }
-        mat.needsUpdate = true
-
-        // ---- ISS 위치 ----
-        let past = []
-        let follow = true
-        let future = []
-        let first = true
-
-        function drawPaths() {
-            world.pathsData([
-                { points: past.length > 1 ? past : [], color: '#8ab4ff', dash: 1 },
-                { points: future, color: '#ffb454', dash: 0.4 },
-            ])
+        function showLoading() {
+            $('answer').innerHTML = '<div class="loading"><div class="dots"><span></span><span></span><span></span></div>에이전트가 도구를 고르는 중...</div>'
         }
 
-        async function updateIss() {
+        $('f').onsubmit = async (e) => {
+            e.preventDefault()
+            const message = $('q').value.trim()
+            if (!message) return
+            $('go').disabled = true
+            $('stepsBox').hidden = true
+            $('answerBox').hidden = false
+            showLoading()
             try {
-                const d = await (await fetch('https://api.wheretheiss.at/v1/satellites/25544')).json()
-                const alt = d.altitude / 6371                       // 지구 반지름 대비 고도
-                past.push([d.latitude, d.longitude, alt])
-                if (past.length > 400) past.shift()
-                world.htmlElementsData([{ lat: d.latitude, lng: d.longitude, alt }])
-                drawPaths()
-                const s = world.getCoords(d.solar_lat, d.solar_lon, 0)
-                sunUniform.value = [s.x, s.y, s.z]
-                if (follow) world.pointOfView({ lat: d.latitude, lng: d.longitude, altitude: 2.2 }, first ? 1500 : 4000)
-                first = false
-                $('lat').textContent = d.latitude.toFixed(3) + '°'
-                $('lon').textContent = d.longitude.toFixed(3) + '°'
-                $('alt').textContent = d.altitude.toFixed(1) + ' km'
-                $('vel').textContent = Math.round(d.velocity).toLocaleString() + ' km/h'
-                $('vis').textContent = { daylight: '낮', eclipsed: '밤(지구 그림자)', visible: '관측 가능' }[d.visibility] || d.visibility
-            } catch (e) {
-                console.log('ISS 위치를 가져오지 못했습니다', e)
+                const r = await fetch('/api/agent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                })
+                const d = await r.json()
+                if (!r.ok) { $('answer').textContent = d.error || '오류가 발생했습니다.'; return }
+                $('steps').textContent = ''
+                d.steps.forEach((s, i) => {
+                    const div = document.createElement('div')
+                    div.className = 'step'
+                    div.style.animationDelay = i * 0.15 + 's'
+                    const ico = document.createElement('span')
+                    ico.className = 'ico'
+                    ico.textContent = ICON[s.tool] || '🔧'
+                    const body = document.createElement('div')
+                    const b = document.createElement('b')
+                    b.textContent = `${i + 1}. ${s.tool}`
+                    const code = document.createElement('code')
+                    code.textContent = JSON.stringify(s.input)
+                    body.append(b, code)
+                    div.append(ico, body)
+                    $('steps').append(div)
+                })
+                $('stepsBox').hidden = d.steps.length === 0
+                $('answer').textContent = d.answer
+            } catch (err) {
+                $('answer').textContent = '요청에 실패했습니다.'
+            } finally {
+                $('go').disabled = false
             }
         }
-
-        // 앞으로 90분 예상 경로: 3분 간격 31개 시각을 10개씩 나눠 요청
-        async function loadFuture() {
-            const now = Math.floor(Date.now() / 1000)
-            const times = Array.from({ length: 31 }, (_, i) => now + i * 180)
-            const pts = []
-            try {
-                for (let i = 0; i < times.length; i += 10) {
-                    const url = 'https://api.wheretheiss.at/v1/satellites/25544/positions?units=kilometers&timestamps=' + times.slice(i, i + 10).join(',')
-                    const arr = await (await fetch(url)).json()
-                    for (const p of arr) pts.push([p.latitude, p.longitude, p.altitude / 6371])
-                }
-                future = pts
-                drawPaths()
-            } catch (e) {
-                console.log('예상 경로를 가져오지 못했습니다', e)
-            }
-        }
-
-        // ---- 지진 (USGS, 키 불필요) ----
-        async function loadQuakes() {
-            try {
-                const g = await (await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson')).json()
-                const quakes = g.features.map(f => ({
-                    lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1],
-                    mag: f.properties.mag, place: f.properties.place,
-                }))
-                world.pointsData(quakes)
-                const top = quakes.reduce((a, b) => (b.mag > a.mag ? b : a), quakes[0])
-                $('qcount').textContent = quakes.length + '회'
-                $('qmax').textContent = top ? 'M' + top.mag : '-'
-                $('qplace').textContent = top ? top.place : ''
-            } catch (e) {
-                console.log('지진 데이터를 가져오지 못했습니다', e)
-            }
-        }
-
-        $('follow').onclick = () => {
-            follow = !follow
-            $('follow').textContent = 'ISS 따라가기: ' + (follow ? '켜짐' : '꺼짐')
-        }
-        // 사용자가 직접 돌려 보면 따라가기를 끈다
-        world.controls().addEventListener('start', () => {
-            follow = false
-            $('follow').textContent = 'ISS 따라가기: 꺼짐'
-        })
-
-        window.addEventListener('resize', () => world.width(innerWidth).height(innerHeight))
-
-        setTimeout(updateIss, 500); setInterval(updateIss, 5000)
-        loadFuture(); setInterval(loadFuture, 10 * 60 * 1000)
-        loadQuakes(); setInterval(loadQuakes, 5 * 60 * 1000)
     </script>
 </body>
 </html>
