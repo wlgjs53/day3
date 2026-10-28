@@ -20,7 +20,7 @@ const functionDeclarations = tools.map(t => ({
   parameters: t.input_schema,
 }));
 
-async function callGemini(key, contents) {
+async function callGemini(key, contents, withTools = true) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
   const init = {
     method: 'POST',
@@ -28,7 +28,7 @@ async function callGemini(key, contents) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM }] },
       contents,
-      tools: [{ functionDeclarations }],
+      tools: withTools ? [{ functionDeclarations }] : undefined,
     }),
   };
   // 503(수요 폭주) · 429(요청 제한)는 일시적이라 짧게 쉬었다가 최대 3번까지 시도한다.
@@ -49,6 +49,17 @@ module.exports = async (req, res) => {
   const key = process.env.GEMINI_API_KEY;
   if (!key) {
     return res.status(500).json({ error: 'GEMINI_API_KEY 환경변수가 설정되지 않았습니다.' });
+  }
+  // 임시 진단: GET /api/agent?mode=plain|tools → Gemini 응답 시간과 상태만 돌려준다(키는 노출하지 않음).
+  if (req.method === 'GET') {
+    const t = Date.now();
+    try {
+      const d = await callGemini(key, [{ role: 'user', parts: [{ text: '동쪽 실내 장소 알려줘' }] }], req.query.mode === 'tools');
+      const parts = (d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || [];
+      return res.status(200).json({ model: MODEL, mode: req.query.mode || 'plain', ms: Date.now() - t, parts: JSON.stringify(parts).slice(0, 400) });
+    } catch (e) {
+      return res.status(200).json({ model: MODEL, mode: req.query.mode || 'plain', ms: Date.now() - t, error: String(e.message).slice(0, 300) });
+    }
   }
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'POST 로 요청해 주세요.' });
