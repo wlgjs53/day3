@@ -22,7 +22,7 @@ const functionDeclarations = tools.map(t => ({
 
 async function callGemini(key, contents) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
-  const r = await fetch(url, {
+  const init = {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({
@@ -30,7 +30,14 @@ async function callGemini(key, contents) {
       contents,
       tools: [{ functionDeclarations }],
     }),
-  });
+  };
+  // 503(수요 폭주) · 429(요청 제한)는 일시적이라 짧게 쉬었다가 최대 3번까지 시도한다.
+  let r;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    r = await fetch(url, init);
+    if (r.status !== 503 && r.status !== 429) break;
+    await new Promise(ok => setTimeout(ok, 1000 * (attempt + 1)));
+  }
   if (!r.ok) {
     const t = await r.text();
     throw new Error(`Gemini 요청 실패 (${r.status}) ${t.slice(0, 200)}`);
