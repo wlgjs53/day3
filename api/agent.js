@@ -3,7 +3,7 @@
 // API Key 는 Vercel 환경변수(GEMINI_API_KEY)에서만 읽는다.
 const { tools, handlers } = require('./tools');
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 const MAX_TURNS = 6;
 
 const SYSTEM =
@@ -49,23 +49,6 @@ module.exports = async (req, res) => {
   const key = process.env.GEMINI_API_KEY;
   if (!key) {
     return res.status(500).json({ error: 'GEMINI_API_KEY 환경변수가 설정되지 않았습니다.' });
-  }
-  // 임시 진단: GET /api/agent?mode=plain|tools → Gemini 응답 시간과 상태만 돌려준다(키는 노출하지 않음).
-  if (req.method === 'GET') {
-    const t = Date.now();
-    if (req.query.mode === 'models') {
-      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=100', { headers: { 'x-goog-api-key': key } });
-      const d = await r.json();
-      const names = (d.models || []).filter(m => (m.supportedGenerationMethods || []).includes('generateContent')).map(m => m.name.replace('models/', ''));
-      return res.status(200).json({ status: r.status, names, error: d.error && d.error.message });
-    }
-    try {
-      const d = await callGemini(key, [{ role: 'user', parts: [{ text: '동쪽 실내 장소 알려줘' }] }], req.query.mode === 'tools', req.query.model || MODEL);
-      const parts = (d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || [];
-      return res.status(200).json({ model: MODEL, mode: req.query.mode || 'plain', ms: Date.now() - t, parts: JSON.stringify(parts).slice(0, 400) });
-    } catch (e) {
-      return res.status(200).json({ model: MODEL, mode: req.query.mode || 'plain', ms: Date.now() - t, error: String(e.message).slice(0, 300) });
-    }
   }
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'POST 로 요청해 주세요.' });
