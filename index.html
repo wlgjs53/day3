@@ -3,56 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제주 관광지 지도</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <title>우주 대시보드</title>
     <style>
-        body { margin: 0; font-family: sans-serif; }
-        form { padding: 8px; display: flex; gap: 8px; align-items: center; }
-        #map { height: calc(100vh - 50px); }
+        html, body { margin: 0; height: 100%; background: #000; color: #e6edf7; font-family: sans-serif; overflow: hidden; }
+        #globe { position: fixed; inset: 0; }
+        .panel { position: fixed; background: rgba(13, 18, 35, .78); border: 1px solid rgba(138, 180, 255, .25);
+                 border-radius: 12px; padding: 12px 14px; backdrop-filter: blur(6px); font-size: 14px; }
+        .panel h3 { margin: 0 0 8px; font-size: 15px; color: #8ab4ff; }
+        .panel div.row { display: flex; justify-content: space-between; gap: 24px; padding: 2px 0; }
+        #iss { top: 16px; left: 16px; min-width: 230px; }
+        #quake { top: 16px; right: 16px; min-width: 200px; }
+        #legend { bottom: 16px; left: 16px; font-size: 12px; line-height: 1.7; }
+        button { margin-top: 8px; width: 100%; padding: 6px; border: 0; border-radius: 8px; background: #2c4a8f; color: #fff; cursor: pointer; }
+        .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+        .sat { font-size: 26px; filter: drop-shadow(0 0 8px #8ab4ff); animation: pulse 1.6s infinite; pointer-events: none; }
+        @keyframes pulse { 50% { filter: drop-shadow(0 0 16px #fff); } }
+        @media (max-width: 600px) { #quake { top: auto; bottom: 16px; right: 16px; } #legend { display: none; } }
     </style>
 </head>
 <body>
-    <form id="f">
-        <select id="area">
-            <option>동쪽</option><option>서쪽</option><option>서귀포</option><option>제주시</option>
-        </select>
-        <select id="indoor">
-            <option value="">실내/야외 전체</option>
-            <option value="true">실내</option>
-            <option value="false">야외</option>
-        </select>
-        <button>찾기</button>
-        <span id="msg"></span>
-    </form>
-    <div id="map"></div>
+    <div id="globe"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <div class="panel" id="iss">
+        <h3>🛰️ ISS 실시간</h3>
+        <div class="row"><span>위도</span><span id="lat">-</span></div>
+        <div class="row"><span>경도</span><span id="lon">-</span></div>
+        <div class="row"><span>고도</span><span id="alt">-</span></div>
+        <div class="row"><span>속도</span><span id="vel">-</span></div>
+        <div class="row"><span>상태</span><span id="vis">-</span></div>
+        <button id="follow">ISS 따라가기: 켜짐</button>
+    </div>
+
+    <div class="panel" id="quake">
+        <h3>🌋 최근 24시간 지진 (규모 2.5+)</h3>
+        <div class="row"><span>발생 횟수</span><span id="qcount">-</span></div>
+        <div class="row"><span>최대 규모</span><span id="qmax">-</span></div>
+        <div id="qplace" style="font-size:12px;color:#aab6d3;margin-top:4px"></div>
+    </div>
+
+    <div class="panel" id="legend">
+        <div><span class="dot" style="background:#8ab4ff"></span>ISS 지나온 경로</div>
+        <div><span class="dot" style="background:#ffb454"></span>앞으로 90분 예상 경로</div>
+        <div><span class="dot" style="background:#ff5a5a"></span>지진 (클수록 크고 붉음)</div>
+        <div>🌗 지구의 어두운 쪽이 지금 밤인 지역</div>
+    </div>
+
+    <script src="https://unpkg.com/globe.gl@2.41.0/dist/globe.gl.min.js"></script>
     <script>
-        const map = L.map('map').setView([33.38, 126.55], 10)
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map)
-        let marker
+        const IMG = 'https://unpkg.com/three-globe@2.41.0/example/img/'
+        const $ = (id) => document.getElementById(id)
+        const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 
-        document.getElementById('f').onsubmit = async (e) => {
-            e.preventDefault()
-            const area = document.getElementById('area').value
-            const indoor = document.getElementById('indoor').value
-            const msg = document.getElementById('msg')
-            const r = await fetch(`/api/spots?area=${encodeURIComponent(area)}&indoor=${indoor}`)
-            const data = await r.json()
-            if (!r.ok) { msg.textContent = data.error; return }
+        const satEl = document.createElement('div')
+        satEl.className = 'sat'
+        satEl.textContent = '🛰️'
 
-            msg.textContent = `${data.count}곳 (장소별 좌표가 없어 지역 중심에 표시)`
-            if (marker) marker.remove()
-            // 좌표가 지역 중심 하나뿐이라 마커 하나에 장소 목록을 담는다
-            let html = `<b>${area}</b><ul style="padding-left:16px;margin:4px 0">`
-            for (const s of data.spots) {
-                html += `<li>${s.name} (${s.indoor ? '실내' : '야외'}) - ${s.desc}</li>`
-            }
-            marker = L.marker(data.center).addTo(map).bindPopup(html + '</ul>').openPopup()
-            map.setView(data.center, 11)
+        const world = Globe()($('globe'))
+            .globeImageUrl(IMG + 'earth-blue-marble.jpg')
+            .bumpImageUrl(IMG + 'earth-topology.png')
+            .backgroundImageUrl(IMG + 'night-sky.png')
+            .atmosphereColor('#6aa4ff')
+            .htmlElementsData([])
+            .htmlElement(() => satEl)
+            .pathPoints('points')
+            .pathPointLat(p => p[0]).pathPointLng(p => p[1]).pathPointAlt(p => p[2])
+            .pathColor(p => p.color)
+            .pathStroke(1.5)
+            .pathDashLength(d => d.dash)
+            .pathDashGap(d => d.dash < 1 ? 0.2 : 0)
+            .pathDashAnimateTime(d => d.dash < 1 ? 12000 : 0)
+            .pointLat('lat').pointLng('lng')
+            .pointAltitude(d => d.mag * 0.02)
+            .pointRadius(d => d.mag * 0.12)
+            .pointColor(d => d.mag >= 6 ? '#ff2a2a' : d.mag >= 5 ? '#ff6a3a' : d.mag >= 4 ? '#ffb454' : '#ffe27a')
+            .pointLabel(d => `<b>M${d.mag}</b> ${esc(d.place)}`)
+        world.controls().autoRotate = false
+
+        // ---- 낮/밤: 지구 재질의 셰이더에 태양 방향을 넣어 밤쪽을 어둡게 한다 ----
+        const sunUniform = { value: [1, 0, 0] }
+        const mat = world.globeMaterial()
+        mat.onBeforeCompile = (sh) => {
+            sh.uniforms.uSunDir = sunUniform
+            sh.vertexShader = sh.vertexShader
+                .replace('#include <common>', '#include <common>\nvarying vec3 vObjNormal;')
+                .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObjNormal = normal;')
+            sh.fragmentShader = sh.fragmentShader
+                .replace('#include <common>', '#include <common>\nvarying vec3 vObjNormal;\nuniform vec3 uSunDir;')
+                .replace('#include <map_fragment>',
+                    '#include <map_fragment>\n' +
+                    'float sunLit = smoothstep(-0.12, 0.12, dot(normalize(vObjNormal), normalize(uSunDir)));\n' +
+                    'diffuseColor.rgb *= mix(0.10, 1.0, sunLit);')
         }
+        mat.needsUpdate = true
+
+        // ---- ISS 위치 ----
+        let past = []
+        let follow = true
+        let future = []
+        let first = true
+
+        function drawPaths() {
+            world.pathsData([
+                { points: past.length > 1 ? past : [], color: '#8ab4ff', dash: 1 },
+                { points: future, color: '#ffb454', dash: 0.4 },
+            ])
+        }
+
+        async function updateIss() {
+            try {
+                const d = await (await fetch('https://api.wheretheiss.at/v1/satellites/25544')).json()
+                const alt = d.altitude / 6371                       // 지구 반지름 대비 고도
+                past.push([d.latitude, d.longitude, alt])
+                if (past.length > 400) past.shift()
+                world.htmlElementsData([{ lat: d.latitude, lng: d.longitude, alt }])
+                drawPaths()
+                const s = world.getCoords(d.solar_lat, d.solar_lon, 0)
+                sunUniform.value = [s.x, s.y, s.z]
+                if (follow) world.pointOfView({ lat: d.latitude, lng: d.longitude, altitude: 2.2 }, first ? 1500 : 4000)
+                first = false
+                $('lat').textContent = d.latitude.toFixed(3) + '°'
+                $('lon').textContent = d.longitude.toFixed(3) + '°'
+                $('alt').textContent = d.altitude.toFixed(1) + ' km'
+                $('vel').textContent = Math.round(d.velocity).toLocaleString() + ' km/h'
+                $('vis').textContent = { daylight: '낮', eclipsed: '밤(지구 그림자)', visible: '관측 가능' }[d.visibility] || d.visibility
+            } catch (e) {
+                console.log('ISS 위치를 가져오지 못했습니다', e)
+            }
+        }
+
+        // 앞으로 90분 예상 경로: 3분 간격 31개 시각을 10개씩 나눠 요청
+        async function loadFuture() {
+            const now = Math.floor(Date.now() / 1000)
+            const times = Array.from({ length: 31 }, (_, i) => now + i * 180)
+            const pts = []
+            try {
+                for (let i = 0; i < times.length; i += 10) {
+                    const url = 'https://api.wheretheiss.at/v1/satellites/25544/positions?units=kilometers&timestamps=' + times.slice(i, i + 10).join(',')
+                    const arr = await (await fetch(url)).json()
+                    for (const p of arr) pts.push([p.latitude, p.longitude, p.altitude / 6371])
+                }
+                future = pts
+                drawPaths()
+            } catch (e) {
+                console.log('예상 경로를 가져오지 못했습니다', e)
+            }
+        }
+
+        // ---- 지진 (USGS, 키 불필요) ----
+        async function loadQuakes() {
+            try {
+                const g = await (await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson')).json()
+                const quakes = g.features.map(f => ({
+                    lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1],
+                    mag: f.properties.mag, place: f.properties.place,
+                }))
+                world.pointsData(quakes)
+                const top = quakes.reduce((a, b) => (b.mag > a.mag ? b : a), quakes[0])
+                $('qcount').textContent = quakes.length + '회'
+                $('qmax').textContent = top ? 'M' + top.mag : '-'
+                $('qplace').textContent = top ? top.place : ''
+            } catch (e) {
+                console.log('지진 데이터를 가져오지 못했습니다', e)
+            }
+        }
+
+        $('follow').onclick = () => {
+            follow = !follow
+            $('follow').textContent = 'ISS 따라가기: ' + (follow ? '켜짐' : '꺼짐')
+        }
+        // 사용자가 직접 돌려 보면 따라가기를 끈다
+        world.controls().addEventListener('start', () => {
+            follow = false
+            $('follow').textContent = 'ISS 따라가기: 꺼짐'
+        })
+
+        window.addEventListener('resize', () => world.width(innerWidth).height(innerHeight))
+
+        setTimeout(updateIss, 500); setInterval(updateIss, 5000)
+        loadFuture(); setInterval(loadFuture, 10 * 60 * 1000)
+        loadQuakes(); setInterval(loadQuakes, 5 * 60 * 1000)
     </script>
 </body>
 </html>

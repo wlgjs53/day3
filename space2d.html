@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우주 대시보드</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        body { margin: 0; font-family: sans-serif; background: #0b0f1a; color: #e6edf7; }
+        header { padding: 10px 16px; font-size: 18px; font-weight: bold; }
+        main { display: flex; gap: 12px; padding: 0 12px 12px; flex-wrap: wrap; }
+        #map { flex: 2 1 480px; height: 70vh; border-radius: 12px; }
+        aside { flex: 1 1 300px; display: flex; flex-direction: column; gap: 12px; }
+        .card { background: #151b2e; border-radius: 12px; padding: 12px; }
+        .card h3 { margin: 0 0 8px; font-size: 15px; color: #8ab4ff; }
+        #stats div { display: flex; justify-content: space-between; padding: 3px 0; }
+        #stats2 div { display: flex; justify-content: space-between; padding: 3px 0; }
+        .dark-tiles { filter: invert(1) hue-rotate(200deg) brightness(0.85) contrast(0.9); }
+        .iss { font-size: 28px; filter: drop-shadow(0 0 6px #8ab4ff); }
+    </style>
+</head>
+<body>
+    <header>🛰️ 우주 대시보드</header>
+    <main>
+        <div id="map"></div>
+        <aside>
+            <div class="card" id="stats">
+                <h3>ISS 실시간 위치</h3>
+                <div><span>위도</span><span id="lat">-</span></div>
+                <div><span>경도</span><span id="lon">-</span></div>
+                <div><span>고도</span><span id="alt">-</span></div>
+                <div><span>속도</span><span id="vel">-</span></div>
+            </div>
+            <div class="card" id="stats2">
+                <h3>태양과 관측 범위</h3>
+                <div><span>ISS 상태</span><span id="vis">-</span></div>
+                <div><span>관측 범위(지름)</span><span id="fp">-</span></div>
+                <div><span>태양 바로 아래</span><span id="sun">-</span></div>
+            </div>
+        </aside>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map', { worldCopyJump: true }).setView([0, 0], 2)
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap',
+            className: 'dark-tiles'
+        }).addTo(map)
+
+        const icon = L.divIcon({ html: '🛰️', className: 'iss', iconSize: [32, 32], iconAnchor: [16, 16] })
+        const marker = L.marker([0, 0], { icon }).addTo(map)
+        let trail = [[]]                                  // 날짜변경선을 넘으면 선을 끊기 위해 구간별로 저장
+        const line = L.polyline(trail, { color: '#8ab4ff', weight: 2 }).addTo(map)
+        const range = L.circle([0, 0], { color: '#8ab4ff', weight: 1, fillOpacity: 0.08 }).addTo(map)
+        const sunIcon = L.divIcon({ html: '☀️', className: 'iss', iconSize: [32, 32], iconAnchor: [16, 16] })
+        const sun = L.marker([0, 0], { icon: sunIcon }).addTo(map)
+        const visText = { daylight: '낮 (햇빛 받는 중)', eclipsed: '밤 (지구 그림자 속)', visible: '지상에서 관측 가능' }
+        let first = true
+
+        async function updateIss() {
+            try {
+                const r = await fetch('https://api.wheretheiss.at/v1/satellites/25544')
+                const d = await r.json()
+                const pos = [d.latitude, d.longitude]
+                marker.setLatLng(pos)
+                const seg = trail[trail.length - 1]
+                if (seg.length && Math.abs(seg[seg.length - 1][1] - pos[1]) > 180) trail.push([])
+                trail[trail.length - 1].push(pos)
+                line.setLatLngs(trail)
+                if (first) { map.setView(pos, 3); first = false }
+                document.getElementById('lat').textContent = d.latitude.toFixed(3) + '°'
+                document.getElementById('lon').textContent = d.longitude.toFixed(3) + '°'
+                document.getElementById('alt').textContent = d.altitude.toFixed(1) + ' km'
+                document.getElementById('vel').textContent = Math.round(d.velocity).toLocaleString() + ' km/h'
+                range.setLatLng(pos).setRadius(d.footprint / 2 * 1000)     // footprint 는 지름(km)
+                sun.setLatLng([d.solar_lat, d.solar_lon])
+                document.getElementById('vis').textContent = visText[d.visibility] || d.visibility
+                document.getElementById('fp').textContent = Math.round(d.footprint).toLocaleString() + ' km'
+                document.getElementById('sun').textContent = `${d.solar_lat.toFixed(1)}°, ${d.solar_lon.toFixed(1)}°`
+            } catch (e) {
+                console.log('ISS 위치를 가져오지 못했습니다', e)
+            }
+        }
+        updateIss()
+        setInterval(updateIss, 5000)
+
+        async function loadApod() {
+            const body = document.getElementById('apodBody')
+            try {
+                const r = await fetch('/api/apod')
+                const d = await r.json()
+                if (!r.ok) { body.textContent = d.error; return }
+                body.textContent = ''
+                const title = document.createElement('b')
+                title.textContent = `${d.title} (${d.date})`
+                body.append(title)
+                if (d.media_type === 'image') {
+                    const img = document.createElement('img')
+                    img.src = d.url
+                    img.alt = d.title
+                    body.append(img)
+                } else {
+                    const a = document.createElement('a')          // 영상인 날은 링크로 연결
+                    a.href = d.url
+                    a.target = '_blank'
+                    a.textContent = '오늘은 영상입니다 — 열기'
+                    a.style.display = 'block'
+                    body.append(a)
+                }
+                const p = document.createElement('p')
+                p.textContent = d.explanation
+                body.append(p)
+            } catch (e) {
+                body.textContent = '사진을 불러오지 못했습니다.'
+            }
+        }
+        loadApod()
+    </script>
+</body>
+</html>
