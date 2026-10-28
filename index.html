@@ -12,17 +12,22 @@
             background-size: 300% 300%; animation: flow 18s ease infinite;
         }
         @keyframes flow { 50% { background-position: 100% 100%; } }
-        /* 떠다니는 이모지 */
-        .float { position: fixed; font-size: 34px; opacity: .25; animation: drift 14s ease-in-out infinite; pointer-events: none; }
-        .float:nth-child(1) { left: 6%; top: 18%; }
-        .float:nth-child(2) { right: 8%; top: 30%; animation-delay: -4s; }
-        .float:nth-child(3) { left: 12%; bottom: 12%; animation-delay: -8s; }
-        .float:nth-child(4) { right: 14%; bottom: 8%; animation-delay: -2s; }
-        @keyframes drift { 50% { transform: translateY(-28px) rotate(8deg); } }
+        main { max-width: 860px; margin: 0 auto; padding: 0 16px 60px; }
 
-        main { position: relative; max-width: 760px; margin: 0 auto; padding: 36px 16px 60px; }
-        h1 { margin: 0 0 4px; font-size: 32px; text-shadow: 0 2px 14px rgba(0,0,0,.35); }
-        .sub { margin: 0 0 22px; opacity: .85; }
+        /* 히어로 배너 */
+        .hero {
+            position: relative; height: 260px; margin: 0 -16px 22px; overflow: hidden;
+            background: linear-gradient(135deg, #1fa38a, #14627a); border-radius: 0 0 28px 28px;
+            box-shadow: 0 12px 30px rgba(0,0,0,.35);
+        }
+        .hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1s; }
+        .hero img.on { opacity: 1; }
+        .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(8,30,50,.85), rgba(8,30,50,.1) 70%); }
+        .hero .txt { position: absolute; left: 24px; right: 24px; bottom: 20px; z-index: 1; }
+        .hero h1 { margin: 0 0 4px; font-size: 34px; text-shadow: 0 2px 14px rgba(0,0,0,.5); }
+        .hero p { margin: 0; opacity: .92; }
+        .hero .emo { position: absolute; top: 14px; right: 18px; z-index: 1; font-size: 30px; letter-spacing: 6px; }
+
         .glass {
             background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3);
             backdrop-filter: blur(12px); border-radius: 18px; padding: 16px;
@@ -35,13 +40,13 @@
         }
         input::placeholder { color: rgba(255,255,255,.6); }
         input:focus { border-color: #ffd98a; box-shadow: 0 0 0 3px rgba(255,217,138,.3); }
-        button {
+        button.go {
             padding: 0 22px; border: 0; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;
             color: #3a2200; background: linear-gradient(135deg, #ffd98a, #ff9f5a); transition: transform .15s;
         }
-        button:hover { transform: translateY(-2px) scale(1.03); }
-        button:disabled { opacity: .55; transform: none; cursor: wait; }
-        .chips { margin: 14px 0 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+        button.go:hover { transform: translateY(-2px) scale(1.03); }
+        button.go:disabled { opacity: .55; transform: none; cursor: wait; }
+        .chips { margin: 14px 0 2px; display: flex; gap: 8px; flex-wrap: wrap; }
         .chips span {
             padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
             background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3); transition: .2s;
@@ -51,33 +56,50 @@
         .box { margin-top: 18px; animation: rise .5s ease both; }
         @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
         .box h2 { margin: 0 0 10px; font-size: 15px; letter-spacing: .5px; color: #ffe2a8; }
-        .step {
-            display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; margin: 8px 0;
-            background: rgba(0,0,0,.25); border-radius: 12px; font-size: 13px; animation: rise .4s ease both;
-        }
-        .step .ico { font-size: 22px; }
-        .step b { color: #8fe3ff; font-size: 14px; }
-        .step code { display: block; margin-top: 2px; color: #cfe7f5; word-break: break-all; }
         #answer { white-space: pre-wrap; line-height: 1.75; font-size: 16px; }
+
+        /* 추천 장소 카드 */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+        .card {
+            display: block; color: inherit; text-decoration: none; overflow: hidden; border-radius: 16px;
+            background: rgba(10,30,50,.55); border: 1px solid rgba(255,255,255,.25);
+            box-shadow: 0 8px 22px rgba(0,0,0,.3); transition: transform .2s; animation: rise .5s ease both;
+        }
+        .card:hover { transform: translateY(-6px) scale(1.02); }
+        .pic { position: relative; height: 150px; display: flex; align-items: center; justify-content: center; font-size: 56px; }
+        .pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .badge {
+            position: absolute; top: 10px; left: 10px; z-index: 1; font-size: 12px; font-weight: bold;
+            padding: 3px 10px; border-radius: 12px; background: rgba(0,0,0,.55);
+        }
+        .info { padding: 10px 14px 14px; }
+        .info b { font-size: 16px; }
+        .info div { font-size: 13px; color: #cfe7f5; margin-top: 3px; }
+        .info .go2 { margin-top: 8px; color: #ffd98a; font-size: 12px; }
 
         .loading { display: flex; gap: 10px; align-items: center; }
         .dots span { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 50%; background: #ffd98a; animation: bounce 1s infinite; }
         .dots span:nth-child(2) { animation-delay: .15s; }
         .dots span:nth-child(3) { animation-delay: .3s; }
         @keyframes bounce { 50% { transform: translateY(-10px); opacity: .5; } }
-        @media (max-width: 520px) { h1 { font-size: 26px; } form { flex-direction: column; } button { padding: 12px; } }
+        @media (max-width: 520px) { .hero h1 { font-size: 26px; } .hero { height: 200px; } form { flex-direction: column; } button.go { padding: 12px; } }
     </style>
 </head>
 <body>
-    <div class="float">🌴</div><div class="float">🍊</div><div class="float">🌊</div><div class="float">⛰️</div>
     <main>
-        <h1>🌴 제주 여행 에이전트</h1>
-        <p class="sub">날씨를 보고 장소를 찾아, 지금 가기 좋은 곳을 추천해 드려요.</p>
+        <div class="hero" id="hero">
+            <img id="heroImg" alt="제주도" referrerpolicy="no-referrer">
+            <div class="emo">🌴🍊🌊</div>
+            <div class="txt">
+                <h1>🌴 제주 여행 에이전트</h1>
+                <p>날씨를 보고 장소를 찾아, 지금 가기 좋은 곳을 추천해 드려요.</p>
+            </div>
+        </div>
 
         <div class="glass">
             <form id="f">
                 <input id="q" placeholder="예) 내일 서귀포에서 뭐 하면 좋을까?" autocomplete="off">
-                <button id="go">✨ 추천받기</button>
+                <button class="go" id="go">✨ 추천받기</button>
             </form>
             <div class="chips" id="chips">
                 <span>오늘 제주시 놀러갈 곳 추천해줘</span>
@@ -86,23 +108,111 @@
             </div>
         </div>
 
-        <div class="glass box" id="stepsBox" hidden>
-            <h2>🤖 에이전트가 고른 도구</h2>
-            <div id="steps"></div>
-        </div>
         <div class="glass box" id="answerBox" hidden>
             <h2>💡 추천</h2>
             <div id="answer"></div>
+        </div>
+        <div class="glass box" id="spotsBox" hidden>
+            <h2>📍 추천 장소</h2>
+            <div class="grid" id="spots"></div>
         </div>
     </main>
 
     <script>
         const $ = (id) => document.getElementById(id)
-        const ICON = { get_weather: '🌤️', find_spots: '🗺️' }
         document.querySelectorAll('#chips span').forEach(c => c.onclick = () => { $('q').value = c.textContent; $('f').requestSubmit() })
 
-        function showLoading() {
-            $('answer').innerHTML = '<div class="loading"><div class="dots"><span></span><span></span><span></span></div>에이전트가 도구를 고르는 중...</div>'
+        // ---- 이미지: 위키백과(키 불필요) 대표 사진. 로고/지도 등은 걸러 낸다 ----
+        const BAD_IMG = /\.svg|logo|flag|map|symbol|emblem/i
+        async function wikiImage(title) {
+            try {
+                const r = await fetch('https://ko.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title))
+                if (!r.ok) return null
+                const d = await r.json()
+                const src = d.thumbnail && d.thumbnail.source
+                return d.type === 'standard' && src && !BAD_IMG.test(src) ? src : null
+            } catch (e) { return null }
+        }
+
+        // 히어로 배너 사진
+        wikiImage('제주도').then(src => {
+            if (!src) return
+            const img = $('heroImg')
+            img.onload = () => img.classList.add('on')
+            img.src = src.replace(/\/\d+px-/, '/960px-')
+        })
+
+        // ---- 장소 유형에 맞는 아이콘/색 (사진이 없을 때 대신 보여 준다) ----
+        const LOOKS = [
+            [/오름|산|분화구/, '⛰️', '#3d7a4a,#8ab86a'],
+            [/바다|해변|해수욕|포구|항구|섬|해안/, '🌊', '#1b6ca8,#4fc3dc'],
+            [/숲|올레|곶자왈|공원|정원|수목/, '🌲', '#1e6b4f,#7bc47f'],
+            [/유적|성|사찰|절/, '🏯', '#8a5a3c,#d9a066'],
+            [/마을|시장|거리/, '🏘️', '#b4583c,#f0a35e'],
+            [/전시|미술|박물|체험|테마/, '🖼️', '#6b4aa0,#c08be0'],
+            [/아쿠아|수족관/, '🐠', '#1b6ca8,#7fe0e0'],
+            [/폭포|동굴|굴/, '💧', '#2f5d8a,#7fb2d9'],
+        ]
+        function look(spot) {
+            const text = spot.name + ' ' + spot.desc
+            for (const [re, emoji, grad] of LOOKS) if (re.test(text)) return { emoji, grad }
+            return { emoji: '🌴', grad: '#1fa38a,#f7b267' }
+        }
+
+        function makeCard(spot, i) {
+            const { emoji, grad } = look(spot)
+            const a = document.createElement('a')
+            a.className = 'card'
+            a.style.animationDelay = i * 0.08 + 's'
+            a.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('제주 ' + spot.name)
+            a.target = '_blank'
+            a.rel = 'noopener'
+
+            const pic = document.createElement('div')
+            pic.className = 'pic'
+            pic.style.background = `linear-gradient(135deg, ${grad})`
+            pic.textContent = emoji
+            const badge = document.createElement('span')
+            badge.className = 'badge'
+            badge.textContent = spot.indoor ? '🏠 실내' : '🌳 야외'
+            pic.append(badge)
+
+            const info = document.createElement('div')
+            info.className = 'info'
+            const name = document.createElement('b')
+            name.textContent = spot.name
+            const sub = document.createElement('div')
+            sub.textContent = `${spot.area} · ${spot.desc}`
+            const go = document.createElement('div')
+            go.className = 'go2'
+            go.textContent = '지도에서 보기 →'
+            info.append(name, sub, go)
+            a.append(pic, info)
+
+            wikiImage(spot.name).then(src => {
+                if (!src) return
+                const img = document.createElement('img')
+                img.alt = spot.name
+                img.referrerPolicy = 'no-referrer'
+                img.onload = () => pic.prepend(img)
+                img.src = src.replace(/\/\d+px-/, '/500px-')
+            })
+            return a
+        }
+
+        // 답변에 이름이 나온 장소만 카드로 보여 준다
+        function showSpots(steps, answer) {
+            const seen = new Set()
+            const picked = []
+            for (const s of steps) {
+                if (s.tool !== 'find_spots' || !s.result || !s.result.spots) continue
+                for (const sp of s.result.spots) {
+                    if (!seen.has(sp.name) && answer.includes(sp.name)) { seen.add(sp.name); picked.push(sp) }
+                }
+            }
+            $('spots').textContent = ''
+            picked.slice(0, 8).forEach((sp, i) => $('spots').append(makeCard(sp, i)))
+            $('spotsBox').hidden = picked.length === 0
         }
 
         $('f').onsubmit = async (e) => {
@@ -110,9 +220,9 @@
             const message = $('q').value.trim()
             if (!message) return
             $('go').disabled = true
-            $('stepsBox').hidden = true
+            $('spotsBox').hidden = true
             $('answerBox').hidden = false
-            showLoading()
+            $('answer').innerHTML = '<div class="loading"><div class="dots"><span></span><span></span><span></span></div>제주 여행지를 찾는 중...</div>'
             try {
                 const r = await fetch('/api/agent', {
                     method: 'POST',
@@ -126,25 +236,8 @@
                     return
                 }
                 if (!r.ok) { $('answer').textContent = [d.error, d.detail].filter(Boolean).join('\n') || '오류가 발생했습니다.'; return }
-                $('steps').textContent = ''
-                d.steps.forEach((s, i) => {
-                    const div = document.createElement('div')
-                    div.className = 'step'
-                    div.style.animationDelay = i * 0.15 + 's'
-                    const ico = document.createElement('span')
-                    ico.className = 'ico'
-                    ico.textContent = ICON[s.tool] || '🔧'
-                    const body = document.createElement('div')
-                    const b = document.createElement('b')
-                    b.textContent = `${i + 1}. ${s.tool}`
-                    const code = document.createElement('code')
-                    code.textContent = JSON.stringify(s.input)
-                    body.append(b, code)
-                    div.append(ico, body)
-                    $('steps').append(div)
-                })
-                $('stepsBox').hidden = d.steps.length === 0
                 $('answer').textContent = d.answer
+                showSpots(d.steps || [], d.answer)
             } catch (err) {
                 $('answer').textContent = '요청에 실패했습니다. (' + err.message + ')'
             } finally {
